@@ -1,0 +1,215 @@
+import React from "react";
+import { Link } from "react-router-dom";
+import { Button } from "../components/Button";
+import { 
+  Calculator, 
+  ScrollText, 
+  Sparkles, 
+  BrainCircuit, 
+  ArrowRight,
+  Fingerprint,
+  Binary,
+  Users,
+  Calendar,
+  MapPin,
+  Globe,
+  PenTool,
+  Search
+} from "lucide-react";
+import styles from "./_index.module.css";
+import { Helmet } from "react-helmet";
+
+export default function LandingPage() {
+  return (
+    <div className={styles.container}>
+      <Helmet>
+        <title>Neuro-Numerology Engine | Cloud Dynasty</title>
+        <meta name="description" content="Premium numerology analysis system combining custom alphabet concatenation with classical systems." />
+      </Helmet>
+
+      <div className={styles.cosmicBg}>
+        <div className={styles.stars}></div>
+      </div>
+
+      {/* Hero Section */}
+      <section className={styles.hero}>
+        <h2 className={styles.heroSubtitle}>Cloud Dynasty Edition</h2>
+        <h1 className={styles.heroTitle}>Neuro-Numerology Engine</h1>
+        <p className={styles.tagline}>
+          Unlock the hidden patterns of your existence. 
+          Numbers don't control life — clarity does.
+        </p>
+        <div className={styles.heroButtons}>
+          <Button asChild size="lg" className={styles.ctaButton}>
+            <Link to="/calculator">
+              Begin Your Analysis <ArrowRight size={20} style={{ marginLeft: 8 }} />
+            </Link>
+          </Button>
+          <Button asChild size="lg" variant="outline" className={styles.secondaryButton}>
+            <Link to="/tools">
+              Explore Tools
+            </Link>
+          </Button>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className={styles.features}>
+        <h2 className={styles.sectionTitle}>System Capabilities</h2>
+        <div className={styles.grid}>
+          <div className={styles.card}>
+            <Binary size={32} className={styles.cardIcon} />
+            <h3 className={styles.cardTitle}>Cloud Dynasty Method</h3>
+            <p className={styles.cardText}>
+              Exclusive 1-26 alphabet concatenation algorithm that reveals hidden 
+              vibrational frequencies missed by standard reduction methods.
+            </p>
+          </div>
+
+          <div className={styles.card}>
+            <Calculator size={32} className={styles.cardIcon} />
+            <h3 className={styles.cardTitle}>Classical Systems</h3>
+            <p className={styles.cardText}>
+              Integrates time-tested Pythagorean and Chaldean methodologies 
+              for a comprehensive multi-dimensional analysis.
+            </p>
+          </div>
+
+          <div className={styles.card}>
+            <Fingerprint size={32} className={styles.cardIcon} />
+            <h3 className={styles.cardTitle}>Core Identity</h3>
+            <p className={styles.cardText}>
+              Deep dive into Life Path, Expression, Soul Urge, and Personality 
+              numbers to construct your complete numerological fingerprint.
+            </p>
+          </div>
+
+          <div className={styles.card}>
+            <BrainCircuit size={32} className={styles.cardIcon} />
+            <h3 className={styles.cardTitle}>Neuro-Interpretations</h3>
+            <p className={styles.cardText}>
+              Modern, actionable insights that bridge ancient wisdom with 
+              contemporary psychological understanding.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Advanced Tools Section */}
+      <section className={styles.toolsSection}>
+        <h2 className={styles.sectionTitle}>Advanced Tools Suite</h2>
+        <p className={styles.sectionSubtitle}>
+          Go beyond basic analysis with our specialized numerology tools.
+        </p>
+        
+        <div className={styles.toolsGrid}>
+          <Link to="/tools" className={styles.toolCard}>
+            <div className={styles.toolIconWrapper}>
+              <PenTool size={24} />
+            </div>
+            <div>
+              <h3 className={styles.toolTitle}>Name Change Analysis</h3>
+              <p className={styles.toolDesc}>See how spelling changes affect your vibration</p>
+            </div>
+          </Link>
+
+          <Link to="/tools" className={styles.toolCard}>
+            <div className={styles.toolIconWrapper}>
+              <Users size={24} />
+            </div>
+            <div>
+              <h3 className={styles.toolTitle}>Compatibility Check</h3>
+              <p className={styles.toolDesc}>Compare Life Paths for relationship insights</p>
+            </div>
+          </Link>
+
+          <Link to="/tools" className={styles.toolCard}>
+            <div className={styles.toolIconWrapper}>
+              <Search size={24} />
+            </div>
+            <div>
+              <h3 className={styles.toolTitle}>Name Optimization</h3>
+              <p className={styles.toolDesc}>Find the perfect spelling for your target number</p>
+            </div>
+          </Link>
+
+          <Link to="/tools" className={styles.toolCard}>
+            <div className={styles.toolIconWrapper}>
+              <Calendar size={24} />
+            </div>
+            <div>
+              <h3 className={styles.toolTitle}>Lucky Dates</h3>
+              <p className={styles.toolDesc}>Discover auspicious dates for important events</p>
+            </div>
+          </Link>
+
+          <Link to="/tools" className={styles.toolCard}>
+            <div className={styles.toolIconWrapper}>
+              <MapPin size={24} />
+            </div>
+            <div>
+              <h3 className={styles.toolTitle}>Address Analysis</h3>
+              <p className={styles.toolDesc}>Decode the energy of any address</p>
+            </div>
+          </Link>
+
+          <Link to="/tools" className={styles.toolCard}>
+            <div className={styles.toolIconWrapper}>
+              <Globe size={24} />
+            </div>
+            <div>
+              <h3 className={styles.toolTitle}>Chinese Numerology</h3>
+              <p className={styles.toolDesc}>Explore Eastern number interpretations</p>
+            </div>
+          </Link>
+        </div>
+      </section>
+
+      {/* How It Works */}
+      <section className={styles.howItWorks}>
+        <h2 className={styles.sectionTitle}>Analysis Protocol</h2>
+        <div className={styles.steps}>
+          <div className={styles.step}>
+            <div className={styles.stepNumber}>1</div>
+            <h3 className={styles.cardTitle}>Input Data</h3>
+            <p className={styles.cardText}>Enter your full legal name and precise date of birth.</p>
+          </div>
+          <div className={styles.step}>
+            <div className={styles.stepNumber}>2</div>
+            <h3 className={styles.cardTitle}>Configure Engine</h3>
+            <p className={styles.cardText}>Select your preferred calculation methods and master number rules.</p>
+          </div>
+          <div className={styles.step}>
+            <div className={styles.stepNumber}>3</div>
+            <h3 className={styles.cardTitle}>Receive Intel</h3>
+            <p className={styles.cardText}>Get instant access to your comprehensive numerology report.</p>
+          </div>
+        </div>
+      </section>
+
+      {/* Philosophy */}
+      <section className={styles.philosophy}>
+        <blockquote className={styles.quote}>
+          "Numbers don't control life — clarity does."
+        </blockquote>
+        <p className={styles.philosophyText}>
+          We believe numerology is not about prediction, but about understanding the underlying 
+          patterns of your character and potential. Our engine provides the clarity you need 
+          to navigate your path with intention and purpose.
+        </p>
+      </section>
+
+      {/* Footer */}
+      <footer className={styles.footer}>
+        <span className={styles.footerBrand}>Cloud Dynasty</span>
+        <p>
+          © {new Date().getFullYear()} Neuro-Numerology Engine. All rights reserved.
+        </p>
+        <p style={{ marginTop: '1rem', fontSize: '0.75rem', opacity: 0.6 }}>
+          Disclaimer: This system is for symbolic and entertainment purposes only. 
+          It does not constitute medical, legal, or financial advice.
+        </p>
+      </footer>
+    </div>
+  );
+}
