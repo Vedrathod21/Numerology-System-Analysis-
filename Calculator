@@ -1,0 +1,444 @@
+import React, { useState } from "react";
+import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet";
+import { useMutation } from "@tanstack/react-query";
+import { z } from "zod";
+import { format } from "date-fns"; // Assuming date-fns is available as per guidelines, if not we can use native
+import { 
+  Calculator as CalculatorIcon, 
+  ArrowLeft, 
+  Sparkles, 
+  RotateCcw,
+  Calendar as CalendarIcon,
+  Clock,
+  Settings2,
+  Binary
+} from "lucide-react";
+
+import { Button } from "../components/Button";
+import { Input } from "../components/Input";
+import { Checkbox } from "../components/Checkbox";
+import { Switch } from "../components/Switch";
+import { Form, FormItem, FormLabel, FormControl, FormMessage, useForm } from "../components/Form";
+import { Popover, PopoverContent, PopoverTrigger } from "../components/Popover";
+import { Calendar } from "../components/Calendar";
+import { Skeleton } from "../components/Skeleton";
+import { Spinner } from "../components/Spinner";
+import { Badge } from "../components/Badge";
+import { toast } from "sonner";
+
+import { postCalculateNumerology, schema as apiSchema } from "../endpoints/numerology/calculate_POST.schema";
+import styles from "./calculator.module.css";
+
+// Form Schema - adapting the API schema for the form
+// We need to handle the Date object from the calendar and convert to string for API
+const formSchema = z.object({
+  fullName: z.string().min(2, "Name is required"),
+  dob: z.date({ required_error: "Date of birth is required" }),
+  birthTime: z.string().optional(),
+  methods: z.object({
+    custom: z.boolean(),
+    pythagorean: z.boolean(),
+    chaldean: z.boolean(),
+  }).refine(data => data.custom || data.pythagorean || data.chaldean, {
+    message: "Select at least one method",
+    path: ["custom"] // Attach error to custom checkbox for visibility
+  }),
+  keepMasterNumbers: z.boolean().default(true),
+});
+
+type FormValues = z.infer<typeof formSchema>;
+
+export default function CalculatorPage() {
+  const [result, setResult] = useState<Awaited<ReturnType<typeof postCalculateNumerology>> | null>(null);
+
+  const form = useForm({
+    defaultValues: {
+      fullName: "",
+      dob: undefined as unknown as Date,
+      birthTime: "",
+      methods: {
+        custom: true,
+        pythagorean: false,
+        chaldean: false,
+      },
+      keepMasterNumbers: true,
+    },
+    schema: formSchema,
+  });
+
+  const calculateMutation = useMutation({
+    mutationFn: async (values: FormValues) => {
+      // Transform form values to API input
+      const selectedMethods: ('custom' | 'pythagorean' | 'chaldean')[] = [];
+      if (values.methods.custom) selectedMethods.push('custom');
+      if (values.methods.pythagorean) selectedMethods.push('pythagorean');
+      if (values.methods.chaldean) selectedMethods.push('chaldean');
+
+      const apiInput = {
+        fullName: values.fullName,
+        dob: format(values.dob, 'yyyy-MM-dd'),
+        birthTime: values.birthTime || undefined,
+        methods: selectedMethods,
+        keepMasterNumbers: values.keepMasterNumbers,
+      };
+
+      return await postCalculateNumerology(apiInput);
+    },
+    onSuccess: (data) => {
+      setResult(data);
+      toast.success("Analysis complete");
+    },
+    onError: (error) => {
+      toast.error(error instanceof Error ? error.message : "Calculation failed");
+    },
+  });
+
+  const onSubmit = (values: FormValues) => {
+    calculateMutation.mutate(values);
+  };
+
+  const handleReset = () => {
+    form.setValues({
+      fullName: "",
+      dob: undefined as unknown as Date,
+      birthTime: "",
+      methods: {
+        custom: true,
+        pythagorean: false,
+        chaldean: false,
+      },
+      keepMasterNumbers: true,
+    });
+    setResult(null);
+  };
+
+  return (
+    <div className={styles.container}>
+      <Helmet>
+        <title>Calculator | Neuro-Numerology Engine</title>
+      </Helmet>
+
+      {/* Header */}
+      <header className={styles.header}>
+        <Link to="/" className={styles.brand}>
+          <ArrowLeft size={20} />
+          <span>Neuro-Engine</span>
+        </Link>
+        <div style={{ display: 'flex', gap: 'var(--spacing-2)' }}>
+          <Button variant="ghost" size="sm" onClick={handleReset}>
+            <RotateCcw size={16} /> Reset
+          </Button>
+        </div>
+      </header>
+
+      <div className={styles.content}>
+        {/* Left Panel: Input Form */}
+        <div className={styles.panel}>
+          <div className={styles.panelTitle}>
+            <Settings2 size={24} />
+            Configuration
+          </div>
+
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)}>
+              <div className={styles.formSection}>
+                <FormItem name="fullName">
+                  <FormLabel>Full Legal Name</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="e.g. Rathod Ved Manishkumar" 
+                      value={form.values.fullName}
+                      onChange={e => form.setValues(prev => ({ ...prev, fullName: e.target.value }))}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </div>
+
+              <div className={styles.formSection}>
+                <FormItem name="dob">
+                  <FormLabel>Date of Birth</FormLabel>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          style={{ 
+                            width: "100%", 
+                            justifyContent: "flex-start",
+                            color: !form.values.dob ? "var(--muted-foreground)" : undefined
+                          }}
+                        >
+                          <CalendarIcon size={16} style={{ marginRight: 8 }} />
+                          {form.values.dob ? format(form.values.dob, "PPP") : "Select date"}
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                                        <PopoverContent removeBackgroundAndPadding align="start">
+                      <Calendar
+                        mode="single"
+                        captionLayout="dropdown"
+                        startMonth={new Date(1900, 0)}
+                        endMonth={new Date()}
+                        selected={form.values.dob}
+                        onSelect={(date) => form.setValues(prev => ({ ...prev, dob: date as Date }))}
+                        disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <FormMessage />
+                </FormItem>
+              </div>
+
+              <div className={styles.formSection}>
+                <FormItem name="birthTime">
+                  <FormLabel>Birth Time (Optional)</FormLabel>
+                  <FormControl>
+                    <div style={{ position: 'relative' }}>
+                      <Clock size={16} style={{ position: 'absolute', left: 12, top: 12, color: 'var(--muted-foreground)' }} />
+                      <Input 
+                        type="time"
+                        style={{ paddingLeft: 36 }}
+                        value={form.values.birthTime}
+                        onChange={e => form.setValues(prev => ({ ...prev, birthTime: e.target.value }))}
+                      />
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              </div>
+
+              <div className={styles.formSection}>
+                <span className={styles.sectionLabel}>Calculation Methods</span>
+                <div className={styles.checkboxGroup}>
+                  <FormItem name="methods.custom">
+                    <div className={styles.checkboxItem}>
+                      <Checkbox 
+                        id="method-custom"
+                        checked={form.values.methods.custom}
+                        onChange={e => form.setValues(prev => ({ 
+                          ...prev, 
+                          methods: { ...prev.methods, custom: e.target.checked } 
+                        }))}
+                      />
+                      <label htmlFor="method-custom" className={styles.checkboxLabel}>
+                        Cloud Dynasty (1-26)
+                      </label>
+                    </div>
+                  </FormItem>
+                  
+                  <FormItem name="methods.pythagorean">
+                    <div className={styles.checkboxItem}>
+                      <Checkbox 
+                        id="method-pythagorean"
+                        checked={form.values.methods.pythagorean}
+                        onChange={e => form.setValues(prev => ({ 
+                          ...prev, 
+                          methods: { ...prev.methods, pythagorean: e.target.checked } 
+                        }))}
+                      />
+                      <label htmlFor="method-pythagorean" className={styles.checkboxLabel}>
+                        Pythagorean (Western)
+                      </label>
+                    </div>
+                  </FormItem>
+
+                  <FormItem name="methods.chaldean">
+                    <div className={styles.checkboxItem}>
+                      <Checkbox 
+                        id="method-chaldean"
+                        checked={form.values.methods.chaldean}
+                        onChange={e => form.setValues(prev => ({ 
+                          ...prev, 
+                          methods: { ...prev.methods, chaldean: e.target.checked } 
+                        }))}
+                      />
+                      <label htmlFor="method-chaldean" className={styles.checkboxLabel}>
+                        Chaldean (Ancient)
+                      </label>
+                    </div>
+                  </FormItem>
+                  {/* Error message for the group attached to one item or handled generally */}
+                                    {form.errors.methods && typeof form.errors.methods !== 'string' && form.errors.methods.custom && (
+                     <p className={styles.errorMessage} style={{ color: 'var(--destructive)', fontSize: '0.8rem' }}>
+                       Select at least one method
+                     </p>
+                  )}
+                </div>
+              </div>
+
+              <div className={styles.formSection}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span className={styles.sectionLabel} style={{ margin: 0 }}>Master Numbers</span>
+                  <Switch 
+                    checked={form.values.keepMasterNumbers}
+                    onCheckedChange={checked => form.setValues(prev => ({ ...prev, keepMasterNumbers: checked }))}
+                  />
+                </div>
+                <p style={{ fontSize: '0.8rem', color: 'var(--muted-foreground)', marginTop: 'var(--spacing-2)' }}>
+                  Keep 11, 22, 33 as master numbers instead of reducing them.
+                </p>
+              </div>
+
+              <Button 
+                type="submit" 
+                style={{ width: '100%', marginTop: 'var(--spacing-4)' }}
+                disabled={calculateMutation.isPending}
+              >
+                {calculateMutation.isPending ? (
+                  <>
+                    <Spinner size="sm" /> Processing...
+                  </>
+                ) : (
+                  <>
+                    <CalculatorIcon size={18} /> Calculate Analysis
+                  </>
+                )}
+              </Button>
+            </form>
+          </Form>
+        </div>
+
+        {/* Right Panel: Results */}
+        <div className={styles.resultsPanel}>
+          {calculateMutation.isPending ? (
+            <div className={styles.breakdownCard}>
+              <div className={styles.skeletonRow}>
+                <Skeleton style={{ height: '200px', width: '100%' }} />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <Skeleton style={{ height: '150px' }} />
+                  <Skeleton style={{ height: '150px' }} />
+                </div>
+                <Skeleton style={{ height: '100px' }} />
+              </div>
+            </div>
+          ) : result ? (
+            <>
+              {/* Snapshot */}
+              <div className={styles.snapshotCard}>
+                <div className={styles.snapshotLabel}>Vibrational Signature</div>
+                <div className={styles.snapshotCode}>
+                  {result.combinedCode || result.lifePath.result}
+                </div>
+                <div className={styles.dominantDigit}>
+                  <Sparkles size={14} />
+                  Dominant Frequency: {result.dominantDigit}
+                </div>
+              </div>
+
+              {/* Core Numbers Grid */}
+              <div className={styles.grid}>
+                <div className={styles.numberCard}>
+                  <div className={styles.numberHeader}>
+                    <span className={styles.numberTitle}>Life Path</span>
+                    <Badge variant="outline">{result.lifePath.result}</Badge>
+                  </div>
+                  <div className={styles.numberValue}>{result.lifePath.result}</div>
+                  <div className={styles.numberMeaning} style={{ marginTop: 'var(--spacing-2)' }}>
+                    {result.interpretations.lifePath.split(':')[0]}
+                  </div>
+                </div>
+
+                <div className={styles.numberCard}>
+                  <div className={styles.numberHeader}>
+                    <span className={styles.numberTitle}>Expression</span>
+                    <Badge variant="outline">{result.expression.result}</Badge>
+                  </div>
+                  <div className={styles.numberValue}>{result.expression.result}</div>
+                  <div className={styles.numberMeaning} style={{ marginTop: 'var(--spacing-2)' }}>
+                    {result.interpretations.expression.split(':')[0]}
+                  </div>
+                </div>
+
+                <div className={styles.numberCard}>
+                  <div className={styles.numberHeader}>
+                    <span className={styles.numberTitle}>Soul Urge</span>
+                    <Badge variant="outline">{result.soulUrge.result}</Badge>
+                  </div>
+                  <div className={styles.numberValue}>{result.soulUrge.result}</div>
+                  <div className={styles.numberMeaning} style={{ marginTop: 'var(--spacing-2)' }}>
+                    {result.interpretations.soulUrge.split(':')[0]}
+                  </div>
+                </div>
+
+                <div className={styles.numberCard}>
+                  <div className={styles.numberHeader}>
+                    <span className={styles.numberTitle}>Personality</span>
+                    <Badge variant="outline">{result.personality.result}</Badge>
+                  </div>
+                  <div className={styles.numberValue}>{result.personality.result}</div>
+                  <div className={styles.numberMeaning} style={{ marginTop: 'var(--spacing-2)' }}>
+                    {result.interpretations.personality.split(':')[0]}
+                  </div>
+                </div>
+              </div>
+
+              {/* Composite Interpretation */}
+              <div className={styles.compositeCard}>
+                <h3 className={styles.namePartHeader}>Composite Analysis</h3>
+                <p className={styles.compositeText}>
+                  "{result.interpretations.composite}"
+                </p>
+              </div>
+
+              {/* Name Breakdown */}
+              <div className={styles.breakdownCard}>
+                <h3 className={styles.panelTitle} style={{ fontSize: '1.25rem' }}>
+                  <Binary size={20} />
+                  Neuro-Breakdown
+                </h3>
+                
+                {result.nameParts.map((part, idx) => (
+                  <div key={idx} className={styles.namePart}>
+                    <div className={styles.namePartHeader}>{part.name}</div>
+                    
+                    {part.custom && (
+                      <div style={{ marginBottom: 'var(--spacing-4)' }}>
+                        <div className={styles.calcRow}>
+                          <span className={styles.calcLabel}>Cloud Dynasty (1-26)</span>
+                          <span className={styles.calcValue}>
+                            Sum: {part.custom.sum} → <span style={{ color: 'var(--primary)', fontWeight: 'bold' }}>{part.custom.reduced}</span>
+                          </span>
+                        </div>
+                        <div className={styles.concatenation}>
+                          {part.custom.concatenated}
+                        </div>
+                      </div>
+                    )}
+
+                    {part.pythagorean && (
+                      <div className={styles.calcRow}>
+                        <span className={styles.calcLabel}>Pythagorean</span>
+                        <span className={styles.calcValue}>
+                          Sum: {part.pythagorean.sum} → {part.pythagorean.reduced}
+                        </span>
+                      </div>
+                    )}
+
+                    {part.chaldean && (
+                      <div className={styles.calcRow}>
+                        <span className={styles.calcLabel}>Chaldean</span>
+                        <span className={styles.calcValue}>
+                          Sum: {part.chaldean.sum} → {part.chaldean.reduced}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+            </>
+          ) : (
+            <div className={styles.emptyState}>
+              <Sparkles size={48} style={{ marginBottom: 'var(--spacing-4)', opacity: 0.5 }} />
+              <h3>Awaiting Input</h3>
+              <p>Enter your details to initialize the Neuro-Numerology Engine.</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
